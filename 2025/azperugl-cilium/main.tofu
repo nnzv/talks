@@ -1,23 +1,26 @@
-/// Global Azure 2025
-///
-/// This configuration provisions an Azure Kubernetes Service (AKS) cluster using OpenTofu
-/// and the `azurerm` provider. It includes a basic networking setup with overlay mode via
-/// Cilium. The cluster uses AzureLinux nodes, a basic load balancer, and minimal drivers
-/// for a lean profile.
-///
-/// Before applying, ensure the `KubeletDisk` feature is enabled in your subscription:
-///
-///     az feature register --namespace "Microsoft.ContainerService" --name "KubeletDisk"
-///
-/// Set the following environment variables with your Azure credentials:
-///
-///     export ARM_SUBSCRIPTION_ID="..."
-///     export ARM_TENANT_ID="..."
-///
-/// Initialize and apply the configuration:
-///
-///     tofu init
-///     tofu apply -auto-approve
+// -*- mode: hcl -*-
+// vi set ft=hcl :
+//
+// Global Azure 2025
+//
+// This configuration provisions an Azure Kubernetes Service (AKS) cluster using OpenTofu
+// and the `azurerm` provider. It includes a basic networking setup with overlay mode via
+// Cilium. The cluster uses AzureLinux nodes, a basic load balancer, and minimal drivers
+// for a lean profile.
+//
+// Before applying, ensure the `KubeletDisk` feature is enabled in your subscription:
+//
+//     az feature register --namespace "Microsoft.ContainerService" --name "KubeletDisk"
+//
+// Set the following environment variables with your Azure credentials:
+//
+//     export ARM_SUBSCRIPTION_ID="..."
+//     export ARM_TENANT_ID="..."
+//
+// Initialize and apply the configuration:
+//
+//     tofu init
+//     tofu apply -auto-approve
 
 locals {
   suffix   = "azperugl"
@@ -78,9 +81,9 @@ resource "azurerm_kubernetes_cluster" "aks" {
     type = "SystemAssigned"
   }
   storage_profile {
-    disk_driver_enabled = false
-    file_driver_enabled = false
-    blob_driver_enabled = false
+    disk_driver_enabled         = false
+    file_driver_enabled         = false
+    blob_driver_enabled         = false
     snapshot_controller_enabled = false
   }
   network_profile {
