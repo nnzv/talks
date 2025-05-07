@@ -1,0 +1,79 @@
+# Copyright 2024 Enzo Venturi. All rights reserved.
+# Use of this source code is governed by a BSD-style
+# license that can be found in the LICENSE file.
+#
+# Tested on Lima 0.22.0 and QEMU 8.2.2
+#
+# DESCRIPTION
+#
+# This template helps set up a development environment for customizing and building Linux kernels
+# using [Lima][1] with QEMU. It simplifies configuring and compiling kernels to meet specific needs,
+# like running containers with runc. Here's a brief summary of the template's functionality
+#
+# 1. Specifies Ubuntu 24.04 server cloud image
+# 2. Installs packages for kernel compile and Docker
+# 3. Fetches check-config.sh hosted on the runc project
+# 4. Downloads and extracts kernel 6.10
+# 5. Configures kernel based on current settings
+#
+# USAGE
+#
+# To create a Lima virtual machine using this template (os.yml), execute the following command
+#
+#     limactl create --tty=false --name=kcd os.yml
+#
+# Set --cpus, --memory, etc., as per your system requirements.
+#
+# Try to configure the [real-time scheduler][2]:
+#
+#     limactl shell kcd sudo docker run -it --cpu-rt-runtime=950000 --ulimit rtprio=99 --cap-add=sys_nice debian:jessie
+#
+# [1]: https://github.com/lima-vm/lima
+# [2]: https://docs.docker.com/config/containers/resource_constraints/#configure-the-real-time-scheduler
+images:
+  - location: "https://cloud-images.ubuntu.com/releases/24.04/release-20240423/ubuntu-24.04-server-cloudimg-amd64.img"
+    arch: "x86_64"
+    digest: "sha256:32a9d30d18803da72f5936cf2b7b9efcb4d0bb63c67933f17e3bdfd1751de3f3"
+mounts: []
+message: |
+  For faster  compilation, use `make localmodconfig`. After  that, run `~/check-config.sh` to  ensure
+  all configurations are correct. Note that using `localmodconfig` might disable certain Docker (runc)
+  kernel options necessary for Docker to function properly. Verify that Docker still works after making
+  these changes.
+provision:
+  - mode: dependency
+    # https://kernelnewbies.org/KernelBuild
+    # https://wiki.ubuntu.com/Kernel/BuildYourOwnKernel
+    script: |
+      #!/usr/bin/env bash
+      set -eux -o pipefail
+      apt-get update -y && apt-get install -y --no-install-recommends docker.io libncurses-dev gawk make flex bison openssl libssl-dev dkms libelf-dev libudev-dev libpci-dev libiberty-dev autoconf gcc
+  - mode: user
+    script: |
+      #!/usr/bin/env bash
+      set -eux -o pipefail
+      cd {{ .Home }}
+      test -f check-config.sh && exit 0
+      wget https://raw.githubusercontent.com/opencontainers/runc/main/script/check-config.sh
+      chmod +x check-config.sh
+  - mode: user
+    script: |
+      #!/usr/bin/env bash
+      set -eux -o pipefail
+      mkdir {{ .Home }}/linux && cd {{ .Home }}/linux
+      test -d linux-6.10 && exit 0
+      curl -O https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-6.10.tar.xz
+      tar xf linux-6.10.tar.xz && rm -f linux-6.10.tar.xz
+      cd linux-6.10
+      make mrproper
+      cp /boot/config-$(uname -r) .config
+      make olddefconfig 
+      # https://docs.kernel.org/admin-guide/module-signing.html
+      # https://lore.kernel.org/all/ZSFnvwvXMiisHOJ7@debian.me/T/
+      scripts/config -d SYSTEM_TRUSTED_KEYS
+      scripts/config -d SYSTEM_REVOCATION_KEYS
+      scripts/config --set-str SYSTEM_TRUSTED_KEYS ""
+      scripts/config --set-str SYSTEM_REVOCATION_KEYS ""
+      scripts/config -d MODULE_SIG_ALL
+      scripts/config -d MODULE_SIG_KEY
+      scripts/config --set-str MODULE_SIG_KEY ""
