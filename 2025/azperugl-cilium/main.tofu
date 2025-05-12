@@ -8,10 +8,6 @@
 // Cilium. The cluster uses AzureLinux nodes, a basic load balancer, and minimal drivers
 // for a lean profile.
 //
-// Before applying, ensure the `KubeletDisk` feature is enabled in your subscription:
-//
-//     az feature register --namespace "Microsoft.ContainerService" --name "KubeletDisk"
-//
 // Set the following environment variables with your Azure credentials:
 //
 //     export ARM_SUBSCRIPTION_ID="..."
@@ -48,7 +44,7 @@ resource "azurerm_resource_group" "rg" {
 
 resource "azurerm_virtual_network" "vnet" {
   name                = "vnet${local.suffix}01"
-  address_space       = ["10.100.0.0/27"]
+  address_space       = ["10.100.0.0/24"]
   location            = local.location
   resource_group_name = azurerm_resource_group.rg.name
 }
@@ -57,7 +53,7 @@ resource "azurerm_subnet" "snet" {
   name                 = "snet${local.suffix}01"
   resource_group_name  = azurerm_resource_group.rg.name
   virtual_network_name = azurerm_virtual_network.vnet.name
-  address_prefixes     = ["10.100.0.0/28"]
+  address_prefixes     = ["10.100.0.0/24"]
 }
 
 resource "azurerm_kubernetes_cluster" "aks" {
@@ -74,7 +70,6 @@ resource "azurerm_kubernetes_cluster" "aks" {
     os_sku               = "AzureLinux"
     vm_size              = "Standard_D2s_v3"
     vnet_subnet_id       = azurerm_subnet.snet.id
-    kubelet_disk_type    = "Temporary"
     auto_scaling_enabled = false
   }
   identity {
@@ -91,8 +86,8 @@ resource "azurerm_kubernetes_cluster" "aks" {
     network_data_plane  = "cilium"
     network_plugin_mode = "overlay"
     network_policy      = "cilium"
-    pod_cidr            = "192.168.0.0/27"
-    service_cidr        = "172.16.0.0/27"
+    pod_cidr            = "192.168.0.0/24"
+    service_cidr        = "172.16.0.0/24"
     dns_service_ip      = "172.16.0.10"
     load_balancer_sku   = "basic"
   }
