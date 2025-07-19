@@ -1,0 +1,35 @@
+apiVersion: cilium.io/v1alpha1
+kind: TracingPolicy
+metadata:
+  name: block-secret-access
+spec:
+  kprobes:
+  - call: security_file_open
+    syscall: false
+    args:
+    - index: 0
+      type: file
+    selectors:
+    - matchArgs:
+      - index: 0
+        operator: Equal
+        values:
+          - "/secret-file"
+      matchBinaries:
+      - operator: NotIn
+        values:
+          - "/bin/cat"
+      matchActions:
+      - action: Override
+        argError: -1
+      - action: Sigkill
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: sleep-infinity
+spec:
+  containers:
+  - name: dummy
+    image: public.ecr.aws/docker/library/alpine:3.22
+    command: ["sleep", "infinity"]
