@@ -20,8 +20,8 @@ spec:
         values:
           - "/bin/cat"
       matchActions:
-      - action: Override
-        argError: -1
+      # - action: Override
+      #   argError: -1
       - action: Sigkill
 ---
 apiVersion: v1
