@@ -11,9 +11,9 @@ flowchart TD
   C --> D[Port-forward HTTP and HTTPS locally]
   D --> E[Send exploit payload to NGINX]
 
-  E --> F{Mode?}
-  F -->|Monitoring (default)| G[Helper pod watches /proc in nginx to detect pid/fd]
-  F -->|Brute Force| H[Workers guess pid/fd via HTTPS requests]
+  E --> F{Mode}
+  F -->|Monitoring| G[Helper pod watches /proc in nginx to detect pid/fd]
+  F -->|Brute force| H[Workers guess pid/fd via HTTPS requests]
 
   G --> I[Build AdmissionReview with detected pid/fd]
   H --> I[Build AdmissionReview with guessed pid/fd]
